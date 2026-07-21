@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Color Palette · Sheep Tower Defense</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #2A3520;
+      min-height: 100vh;
+      padding: 32px 24px;
+      color: #F5EDDA;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 4px;
+      color: #7A9E5F;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: normal;
+      color: #F5EDDA;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #A8C47A;
+      font-size: 14px;
+      margin-bottom: 40px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #7A9E5F;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── Biome Tiles ── */
+    .biomes {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+
+    .biome-tile {
+      border-radius: 8px;
+      padding: 20px 24px;
+      cursor: pointer;
+      flex: 1 1 120px;
+      min-width: 100px;
+      transition: transform 0.15s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      user-select: none;
+    }
+
+    .biome-tile:active { transform: scale(0.95); }
+
+    .biome-name {
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .biome-hex {
+      font-size: 11px;
+      opacity: 0.8;
+      font-family: monospace;
+    }
+
+    /* ── Palette Rows ── */
+    .group {
+      margin-bottom: 40px;
+    }
+
+    .swatch-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .swatch {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1E2A14;
+      transition: transform 0.1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      user-select: none;
+    }
+
+    .swatch:active { transform: scale(0.99); }
+
+    .swatch-color {
+      width: 72px;
+      height: 56px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .swatch-info {
+      flex: 1;
+    }
+
+    .swatch-name {
+      font-size: 14px;
+      color: #F5EDDA;
+      font-weight: bold;
+    }
+
+    .swatch-use {
+      font-size: 11px;
+      color: #A8BFD4;
+      margin-top: 2px;
+    }
+
+    .swatch-hex {
+      font-family: monospace;
+      font-size: 13px;
+      color: #7A9E5F;
+      padding: 0 20px;
+    }
+
+    /* ── Note box ── */
+    .note {
+      background: #1E2A14;
+      border-radius: 12px;
+      padding: 20px 24px;
+      border-left: 3px solid #7A9E5F;
+      margin-top: 16px;
+    }
+
+    .note-label {
+      font-size: 12px;
+      color: #7A9E5F;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .note-text {
+      font-size: 13px;
+      color: #A8C47A;
+      line-height: 1.8;
+    }
+
+    .note-text strong { color: #F5EDDA; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #5C7A3E;
+      color: #F5EDDA;
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      letter-spacing: 1px;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="eyebrow">Low Poly Nature · Sheep Tower Defense</div>
+  <h1>Color Palette</h1>
+  <p class="subtitle">Click any swatch to copy its hex code</p>
+
+  <!-- Biome Tiles -->
+  <div class="section-label">Campaign Map · Hex Tile Biomes</div>
+  <div class="biomes" id="biomes"></div>
+
+  <!-- Palette Groups -->
+  <div id="groups"></div>
+
+  <!-- Unity Note -->
+  <div class="note">
+    <div class="note-label">Unity Usage</div>
+    <div class="note-text">
+      Copy hex → In Unity Inspector, click the color field → switch to <strong>Hex</strong> mode → paste.<br/>
+      For <strong>HexTileData</strong> tileColor fields, use the Biome colors above.<br/>
+      For <strong>BuildManager</strong> validColor / invalidColor, use UI States.
+    </div>
+  </div>
+
+</div>
+
+<div id="toast">Copied!</div>
+
+<script>
+  const biomes = [
+    { biome: "Farm",    hex: "#7A9E5F", text: "#F5EDDA" },
+    { biome: "Forest",  hex: "#3D5A3E", text: "#A8C47A" },
+    { biome: "Desert",  hex: "#D4B483", text: "#7A4F2D" },
+    { biome: "Snow",    hex: "#C8DDE8", text: "#2D3F55" },
+    { biome: "Alien",   hex: "#4A2E6B", text: "#7BC67E" },
+    { biome: "City",    hex: "#5A6A7A", text: "#D8E8F0" },
+  ];
+
+  const palette = {
+    "Nature Base": [
+      { name: "Forest Floor", hex: "#3D5A3E", use: "Primary UI panels, dark backgrounds" },
+      { name: "Moss",         hex: "#5C7A3E", use: "Buttons, Farm hex tile" },
+      { name: "Fern",         hex: "#7A9E5F", use: "Hover states, Forest hex tile" },
+      { name: "Meadow",       hex: "#A8C47A", use: "Highlights, active borders" },
+      { name: "Straw",        hex: "#D4B483", use: "Secondary text, Desert hex tile" },
+    ],
+    "Earthy Warmth": [
+      { name: "Clay",         hex: "#B5693A", use: "Warning states, locked tile overlay" },
+      { name: "Bark",         hex: "#7A4F2D", use: "Dark accents, borders" },
+      { name: "Terracotta",   hex: "#C4714A", use: "Damage indicators, enemies" },
+      { name: "Sand",         hex: "#E8CFA0", use: "Light text on dark panels" },
+      { name: "Cream",        hex: "#F5EDDA", use: "Primary text, UI backgrounds" },
+    ],
+    "Sky & Water": [
+      { name: "Dusk Blue",    hex: "#4A6FA5", use: "Info panels, Snow hex tile" },
+      { name: "Slate",        hex: "#6B8CAE", use: "Secondary UI elements" },
+      { name: "Mist",         hex: "#A8BFD4", use: "Disabled states, locked tiles" },
+      { name: "Cloud",        hex: "#D8E8F0", use: "Light backgrounds, tooltips" },
+      { name: "Storm",        hex: "#2D3F55", use: "Dark panel backgrounds" },
+    ],
+    "Accents": [
+      { name: "Gold Star",    hex: "#F0C040", use: "Stars, selected hex tile, coins" },
+      { name: "Amber",        hex: "#D4852A", use: "Gold star shadow, resource icon" },
+      { name: "Alien Glow",   hex: "#7BC67E", use: "Alien hex tile, special effects" },
+      { name: "UFO Purple",   hex: "#6B4C9A", use: "Enemy UFOs, alien biome" },
+      { name: "Sheep White",  hex: "#EFF0E8", use: "Sheep, UI highlights" },
+    ],
+    "UI States": [
+      { name: "Valid Green",      hex: "#5A9E6F", use: "Build preview valid, unlock" },
+      { name: "Invalid Red",      hex: "#A85A4A", use: "Build preview invalid, errors" },
+      { name: "Resource Yellow",  hex: "#D4A843", use: "Not enough resources warning" },
+      { name: "Locked Grey",      hex: "#6B7A6B", use: "Locked hex tiles, disabled" },
+      { name: "Completed Badge",  hex: "#C8A84B", use: "Completed level badge" },
+    ],
+  };
+
+  function copyHex(hex) {
+    navigator.clipboard.writeText(hex).catch(() => {
+      // Fallback for browsers that block clipboard without interaction
+      const el = document.createElement("textarea");
+      el.value = hex;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    });
+
+    const toast = document.getElementById("toast");
+    toast.textContent = `Copied ${hex}`;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1800);
+  }
+
+  // Render biome tiles
+  const biomesEl = document.getElementById("biomes");
+  biomes.forEach(({ biome, hex, text }) => {
+    const el = document.createElement("div");
+    el.className = "biome-tile";
+    el.style.background = hex;
+    el.innerHTML = `
+      <div class="biome-name" style="color:${text}">${biome}</div>
+      <div class="biome-hex" style="color:${text}">${hex}</div>
+    `;
+    el.addEventListener("click", () => copyHex(hex));
+    biomesEl.appendChild(el);
+  });
+
+  // Render palette groups
+  const groupsEl = document.getElementById("groups");
+  Object.entries(palette).forEach(([group, colors]) => {
+    const section = document.createElement("div");
+    section.className = "group";
+    section.innerHTML = `<div class="section-label">${group}</div>`;
+
+    const rows = document.createElement("div");
+    rows.className = "swatch-row";
+
+    colors.forEach(({ name, hex, use }) => {
+      const row = document.createElement("div");
+      row.className = "swatch";
+      row.innerHTML = `
+        <div class="swatch-color" style="background:${hex}"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">${name}</div>
+          <div class="swatch-use">${use}</div>
+        </div>
+        <div class="swatch-hex">${hex}</div>
+      `;
+      row.addEventListener("click", () => {
+        row.querySelector(".swatch-color").textContent = "✓";
+        setTimeout(() => row.querySelector(".swatch-color").textContent = "", 1500);
+        copyHex(hex);
+      });
+      rows.appendChild(row);
+    });
+
+    section.appendChild(rows);
+    groupsEl.appendChild(section);
+  });
+</script>
+</body>
+</html>
